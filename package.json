@@ -79,7 +79,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/KYABARSHINAVYA/Claudable.git"
+    "url": "git+https://github.com/KYABARSHINAVYA/Claudable.git"
   },
   "build": {
     "appId": "com.claudable.desktop",
@@ -130,5 +130,13 @@
       ],
       "category": "Development"
     }
-  }
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/KYABARSHINAVYA/Claudable/issues"
+  },
+  "homepage": "https://github.com/KYABARSHINAVYA/Claudable#readme"
 }
