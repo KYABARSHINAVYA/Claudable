@@ -30,6 +30,8 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.68",
     "@prisma/client": "^6.1.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "dockerode": "^5.0.1",
     "dotenv": "^16.4.5",
     "framer-motion": "^11.11.17",
     "highlight.js": "^11.10.0",
@@ -43,6 +45,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/dockerode": "^4.0.1",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
