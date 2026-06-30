@@ -1,7 +1,7 @@
 import { CLI_OPTIONS, type CLIOption } from '@/types/cli';
 import { getModelDefinitionsForCli, normalizeModelId } from '@/lib/constants/cliModels';
 
-export const ACTIVE_CLI_IDS = ['claude', 'codex', 'cursor', 'qwen', 'glm'] as const;
+export const ACTIVE_CLI_IDS = ['gemini', 'codex', 'cursor', 'qwen', 'glm'] as const;
 
 export type ActiveCliId = (typeof ACTIVE_CLI_IDS)[number];
 
@@ -11,7 +11,7 @@ const isActiveCliId = (value: string): value is ActiveCliId => {
   return ACTIVE_CLI_ID_SET.has(value as ActiveCliId);
 };
 
-export const DEFAULT_ACTIVE_CLI: ActiveCliId = 'claude';
+export const DEFAULT_ACTIVE_CLI: ActiveCliId = 'gemini';
 
 type ActiveCliOption = CLIOption & { id: ActiveCliId };
 
@@ -57,6 +57,9 @@ export const sanitizeActiveCli = (cli: string | null | undefined, fallback: Acti
     return fallback;
   }
   const normalized = cli.toLowerCase();
+  if (normalized === 'claude') {
+    return 'gemini';
+  }
   return isActiveCliId(normalized) ? (normalized as ActiveCliId) : fallback;
 };
 

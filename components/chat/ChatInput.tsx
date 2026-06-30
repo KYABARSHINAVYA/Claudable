@@ -55,7 +55,7 @@ export default function ChatInput({
   mode = 'act',
   onModeChange,
   projectId,
-  preferredCli = 'claude',
+  preferredCli = 'gemini',
   selectedModel = '',
   thinkingMode = false,
   onThinkingModeChange,
@@ -205,7 +205,7 @@ export default function ChatInput({
 
     if (!supportsImageUpload) {
       console.error('❌ Current CLI does not support image upload:', preferredCli);
-      alert(`Only Claude CLI supports image uploads.\nCurrent CLI: ${preferredCli}\nSwitch to Claude CLI.`);
+      alert(`The selected assistant does not support image uploads.\nCurrent assistant: ${preferredCli}\nSwitch to Gemini or Claude.`);
       return;
     }
 
@@ -240,7 +240,14 @@ export default function ChatInput({
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`❌ Upload failed for ${file.name}:`, response.status, errorText);
-          throw new Error(`Failed to upload ${file.name}: ${response.status} ${errorText}`);
+          let serverMessage = errorText;
+          try {
+            const parsed = JSON.parse(errorText);
+            serverMessage = parsed.message || parsed.error || errorText;
+          } catch {
+            // keep raw response text
+          }
+          throw new Error(`Failed to upload ${file.name}: ${serverMessage}`);
         }
 
         const result = await response.json();
@@ -274,7 +281,8 @@ export default function ChatInput({
       }
     } catch (error) {
       console.error('❌ Image upload failed:', error);
-      alert('Image upload failed. Please try again.');
+      const message = error instanceof Error ? error.message : 'Image upload failed. Please try again.';
+      alert(message);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -430,10 +438,10 @@ export default function ChatInput({
                   className="flex items-center justify-center w-8 h-8 text-gray-300 cursor-not-allowed opacity-50 rounded-full"
                   title={
                     preferredCli === 'qwen'
-                      ? 'Qwen Coder does not support image input. Please use Claude CLI.'
+                      ? 'Qwen Coder does not support image input. Please use Gemini or Claude.'
                       : preferredCli === 'cursor'
-                      ? 'Cursor CLI does not support image input. Please use Claude CLI.'
-                      : 'GLM CLI supports text only. Please use Claude CLI.'
+                      ? 'Cursor CLI does not support image input. Please use Gemini or Claude.'
+                      : 'GLM CLI supports text only. Please use Gemini or Claude.'
                   }
                 >
                   <ImageIcon className="h-4 w-4" />

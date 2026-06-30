@@ -14,6 +14,7 @@ import { CLAUDE_DEFAULT_MODEL, normalizeClaudeModelId, getClaudeModelDisplayName
 import path from 'path';
 import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
+import { describeProvider, loadClaudeCompatibleProviderConfig } from '@/lib/cloud/provider';
 import {
   markUserRequestAsRunning,
   markUserRequestAsCompleted,
@@ -573,8 +574,10 @@ export async function executeClaude(
   console.log(`[ClaudeService] Project: ${projectId}`);
   const resolvedModel = resolveModelId(model);
   const modelLabel = getClaudeModelDisplayName(resolvedModel);
+  const providerConfig = await loadClaudeCompatibleProviderConfig(resolvedModel);
   const aliasNote = resolvedModel !== model ? ` (alias for ${model})` : '';
   console.log(`[ClaudeService] Model: ${modelLabel} [${resolvedModel}]${aliasNote}`);
+  console.log(`[ClaudeService] Provider: ${describeProvider(providerConfig)}`);
   console.log(`[ClaudeService] Session ID: ${sessionId || 'new session'}`);
   console.log(`[ClaudeService] Instruction: ${instruction.substring(0, 100)}...`);
   console.log(`========================================\n`);
@@ -630,7 +633,7 @@ export async function executeClaude(
   };
 
   // Send start notification via SSE
-  publishStatus('starting', 'Initializing Claude Agent SDK...');
+  publishStatus('starting', `Initializing Claude Agent SDK (${providerConfig.provider})...`);
 
   await safeMarkRunning();
 
@@ -720,9 +723,11 @@ export async function executeClaude(
       options: {
         workingDirectory: absoluteProjectPath, // Work only in project folder (protects Claudable root)
         additionalDirectories: [absoluteProjectPath],
-        model: resolvedModel,
+        model: providerConfig.model ?? resolvedModel,
         resume: sessionId, // Resume previous session
         permissionMode: 'bypassPermissions', // Auto-approve commands and edits
+        allowDangerouslySkipPermissions: true,
+        env: providerConfig.env,
         systemPrompt: `You are an expert web developer building a Next.js application.
 - Use Next.js 15 App Router
 - Use TypeScript

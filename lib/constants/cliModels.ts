@@ -14,11 +14,43 @@ type ModelDefinition = {
   supportsImages?: boolean;
 };
 
+export const GEMINI_DEFAULT_MODEL = 'gemini-1.5-flash';
+
+export const GEMINI_MODEL_DEFINITIONS: ModelDefinition[] = [
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', supportsImages: true },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', supportsImages: true },
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', supportsImages: true },
+];
+
+const GEMINI_MODEL_ALIASES: Record<string, string> = {
+  gemini: GEMINI_DEFAULT_MODEL,
+  'gemini-flash': GEMINI_DEFAULT_MODEL,
+  'gemini-1.5-flash': 'gemini-1.5-flash',
+  'gemini-15-flash': 'gemini-1.5-flash',
+  'gemini-1.5-pro': 'gemini-1.5-pro',
+  'gemini-15-pro': 'gemini-1.5-pro',
+  'gemini-2.0-flash': 'gemini-2.0-flash',
+  'gemini-20-flash': 'gemini-2.0-flash',
+};
+
+function normalizeGeminiModelId(model?: string | null): string {
+  if (!model) {
+    return GEMINI_DEFAULT_MODEL;
+  }
+  const normalized = model.trim().toLowerCase();
+  return GEMINI_MODEL_ALIASES[normalized] ?? GEMINI_DEFAULT_MODEL;
+}
+
+function getGeminiModelDisplayName(modelId?: string | null): string {
+  const normalized = normalizeGeminiModelId(modelId);
+  return GEMINI_MODEL_DEFINITIONS.find(model => model.id === normalized)?.name ?? normalized;
+}
+
 const DEFAULT_MODELS: Record<CLIKey, string> = {
   claude: CLAUDE_DEFAULT_MODEL,
   codex: CODEX_DEFAULT_MODEL,
   cursor: CURSOR_DEFAULT_MODEL,
-  gemini: 'gemini-2.5-pro',
+  gemini: GEMINI_DEFAULT_MODEL,
   qwen: QWEN_DEFAULT_MODEL,
   glm: GLM_DEFAULT_MODEL,
 };
@@ -27,10 +59,7 @@ const MODEL_DEFINITIONS: Record<CLIKey, ModelDefinition[]> = {
   claude: CLAUDE_MODEL_DEFINITIONS,
   codex: CODEX_MODEL_DEFINITIONS,
   cursor: CURSOR_MODEL_DEFINITIONS,
-  gemini: [
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
-  ],
+  gemini: GEMINI_MODEL_DEFINITIONS,
   qwen: QWEN_MODEL_DEFINITIONS,
   glm: GLM_MODEL_DEFINITIONS,
 };
@@ -52,6 +81,8 @@ export function normalizeModelId(cli: string | null | undefined, model?: string 
       return normalizeCodexModelId(model);
     case 'cursor':
       return normalizeCursorModelId(model);
+    case 'gemini':
+      return normalizeGeminiModelId(model);
     case 'qwen':
       return normalizeQwenModelId(model);
     case 'glm':
@@ -72,6 +103,8 @@ export function getModelDisplayName(cli: string | null | undefined, modelId?: st
       return getCodexModelDisplayName(modelId);
     case 'cursor':
       return getCursorModelDisplayName(modelId);
+    case 'gemini':
+      return getGeminiModelDisplayName(modelId);
     case 'qwen':
       return getQwenModelDisplayName(modelId);
     case 'glm':

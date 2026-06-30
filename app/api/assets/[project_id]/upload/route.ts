@@ -12,6 +12,7 @@ const PROJECTS_DIR = process.env.PROJECTS_DIR || './data/projects';
 const PROJECTS_DIR_ABSOLUTE = path.isAbsolute(PROJECTS_DIR)
   ? PROJECTS_DIR
   : path.resolve(process.cwd(), PROJECTS_DIR);
+const MAX_IMAGE_UPLOAD_BYTES = Number(process.env.MAX_IMAGE_UPLOAD_BYTES || 8 * 1024 * 1024);
 
 function resolveAssetsPath(projectId: string): string {
   return path.join(PROJECTS_DIR_ABSOLUTE, projectId, 'assets');
@@ -34,6 +35,17 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     if (!file.type.startsWith('image/')) {
       return NextResponse.json({ success: false, error: 'File must be an image' }, { status: 400 });
+    }
+
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Image is too large',
+          message: `Maximum image size is ${Math.round(MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024))}MB.`,
+        },
+        { status: 413 },
+      );
     }
 
     const projectAssetsPath = resolveAssetsPath(project_id);

@@ -1,22 +1,33 @@
 interface Session {
   projectId: string;
   containerId: string;
+  workspacePath?: string;
   createdAt: Date;
+  lastActiveAt: Date;
 }
 
 class SessionManager {
   private sessions = new Map<string, Session>();
 
-  createSession(projectId: string, containerId: string) {
-    this.sessions.set(projectId, {
+  createSession(projectId: string, containerId: string, workspacePath?: string) {
+    const now = new Date();
+    const session = {
       projectId,
       containerId,
-      createdAt: new Date(),
-    });
+      workspacePath,
+      createdAt: now,
+      lastActiveAt: now,
+    };
+    this.sessions.set(projectId, session);
+    return session;
   }
 
   getSession(projectId: string) {
-    return this.sessions.get(projectId);
+    const session = this.sessions.get(projectId);
+    if (session) {
+      session.lastActiveAt = new Date();
+    }
+    return session;
   }
 
   removeSession(projectId: string) {

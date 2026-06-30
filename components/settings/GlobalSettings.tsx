@@ -45,6 +45,18 @@ const CLI_OPTIONS: CLIOption[] = [
     models: getModelDefinitionsForCli('claude').map(({ id, name }) => ({ id, name })),
   },
   {
+    id: 'gemini',
+    name: 'Gemini',
+    icon: '',
+    description: 'Google Gemini API generation without Claude login',
+    color: 'from-blue-500 to-cyan-500',
+    brandColor: '#4285F4',
+    downloadUrl: 'https://ai.google.dev/',
+    installCommand: 'Set GEMINI_API_KEY in .env.local',
+    enabled: true,
+    models: getModelDefinitionsForCli('gemini').map(({ id, name }) => ({ id, name })),
+  },
+  {
     id: 'codex',
     name: 'Codex CLI',
     icon: '',
@@ -289,6 +301,31 @@ export default function GlobalSettings({ isOpen, onClose, initialTab = 'general'
         nextCliSettings[cliId] = existing;
       } else {
         delete existing.apiKey;
+        if (Object.keys(existing).length > 0) {
+          nextCliSettings[cliId] = existing;
+        } else {
+          delete nextCliSettings[cliId];
+        }
+      }
+
+      return {
+        ...prev,
+        cli_settings: nextCliSettings,
+      };
+    });
+  };
+
+  const setCliStringSetting = (cliId: string, key: string, value: string) => {
+    setGlobalSettings(prev => {
+      const nextCliSettings = { ...(prev?.cli_settings ?? {}) };
+      const existing = { ...(nextCliSettings[cliId] ?? {}) };
+      const trimmed = value.trim();
+
+      if (trimmed.length > 0) {
+        existing[key] = trimmed;
+        nextCliSettings[cliId] = existing;
+      } else {
+        delete existing[key];
         if (Object.keys(existing).length > 0) {
           nextCliSettings[cliId] = existing;
         } else {
@@ -608,6 +645,63 @@ export default function GlobalSettings({ isOpen, onClose, initialTab = 'general'
                                   Stored locally and injected as <code className="font-mono">ZHIPU_API_KEY</code> (and aliases) when running GLM.
                                   Leave blank to rely on server environment variables instead.
                                 </p>
+                              </div>
+                            )}
+                            {(cli.id === 'claude' || cli.id === 'gemini') && (
+                              <div className="space-y-2">
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-medium text-gray-600 ">
+                                    {cli.id === 'gemini' ? 'Provider' : 'Provider'}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={typeof settings.provider === 'string' ? settings.provider : ''}
+                                    onChange={(e) => setCliStringSetting(cli.id, 'provider', e.target.value)}
+                                    placeholder={cli.id === 'gemini' ? 'google-gemini' : 'gemini-compatible, gemini-gateway, openrouter'}
+                                    className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                                  />
+                                </div>
+                                {cli.id === 'claude' && <div className="space-y-1.5">
+                                  <label className="text-xs font-medium text-gray-600 ">
+                                    Gemini Agent Base URL
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={typeof settings.baseUrl === 'string' ? settings.baseUrl : ''}
+                                    onChange={(e) => setCliStringSetting(cli.id, 'baseUrl', e.target.value)}
+                                    placeholder="https://your-gemini-gateway.example.com/anthropic"
+                                    className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                                  />
+                                </div>}
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-medium text-gray-600 ">
+                                    Gemini API Key
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type={apiKeyVisibility[cli.id] ? 'text' : 'password'}
+                                      value={settings.apiKey ?? ''}
+                                      onChange={(e) => setCliApiKey(cli.id, e.target.value)}
+                                      placeholder="Gemini API key"
+                                      className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        toggleApiKeyVisibility(cli.id);
+                                      }}
+                                      className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg bg-white transition-colors"
+                                    >
+                                      {apiKeyVisibility[cli.id] ? 'Hide' : 'Show'}
+                                    </button>
+                                  </div>
+                                  <p className="text-[11px] text-gray-500 leading-snug">
+                                    Stored locally and used as <code className="font-mono">GEMINI_API_KEY</code>.
+                                    {cli.id === 'claude' ? ' Use a Gemini-backed agent gateway to preserve the Claude SDK workflow.' : ' This path does not require Claude login.'}
+                                  </p>
+                                </div>
                               </div>
                             )}
                             {cli.id === 'cursor' && (

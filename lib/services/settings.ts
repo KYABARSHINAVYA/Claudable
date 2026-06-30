@@ -13,8 +13,11 @@ export interface GlobalSettings {
 }
 
 const DEFAULT_SETTINGS: GlobalSettings = {
-  default_cli: 'claude',
+  default_cli: 'gemini',
   cli_settings: {
+    gemini: {
+      model: getDefaultModelForCli('gemini'),
+    },
     claude: {
       model: getDefaultModelForCli('claude'),
     },
@@ -33,6 +36,14 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   },
 };
 
+function normalizeDefaultCli(cli: unknown): string {
+  if (typeof cli !== 'string' || cli.trim().length === 0) {
+    return DEFAULT_SETTINGS.default_cli;
+  }
+  const normalized = cli.trim().toLowerCase();
+  return normalized === 'claude' ? 'gemini' : normalized;
+}
+
 async function ensureDataDir(): Promise<void> {
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
@@ -45,9 +56,7 @@ async function readSettingsFile(): Promise<GlobalSettings | null> {
       return null;
     }
 
-    const defaultCli = typeof parsed.default_cli === 'string'
-      ? parsed.default_cli
-      : DEFAULT_SETTINGS.default_cli;
+    const defaultCli = normalizeDefaultCli(parsed.default_cli);
 
     const cliSettings =
       typeof parsed.cli_settings === 'object' && parsed.cli_settings !== null
@@ -55,7 +64,7 @@ async function readSettingsFile(): Promise<GlobalSettings | null> {
         : {};
 
     return {
-      default_cli: typeof parsed.default_cli === 'string' ? parsed.default_cli : DEFAULT_SETTINGS.default_cli,
+      default_cli: defaultCli,
       cli_settings: {
         ...DEFAULT_SETTINGS.cli_settings,
         ...cliSettings,
@@ -75,7 +84,7 @@ export async function loadGlobalSettings(): Promise<GlobalSettings> {
   const existing = await readSettingsFile();
   if (existing) {
     const merged: GlobalSettings = {
-      default_cli: existing.default_cli ?? DEFAULT_SETTINGS.default_cli,
+      default_cli: normalizeDefaultCli(existing.default_cli),
       cli_settings: {
         ...DEFAULT_SETTINGS.cli_settings,
         ...(existing.cli_settings ?? {}),
@@ -114,7 +123,7 @@ export async function updateGlobalSettings(partial: Partial<GlobalSettings>): Pr
   const cliSettings = normalizeCliSettings(partial.cli_settings);
 
   const next: GlobalSettings = {
-    default_cli: partial.default_cli ?? current.default_cli,
+    default_cli: normalizeDefaultCli(partial.default_cli ?? current.default_cli),
     cli_settings: { ...current.cli_settings },
   };
 

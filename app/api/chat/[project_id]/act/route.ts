@@ -15,8 +15,11 @@ import { initializeNextJsProject as initializeCodexProject, applyChanges as appl
 import { initializeNextJsProject as initializeCursorProject, applyChanges as applyCursorChanges } from '@/lib/services/cli/cursor';
 import { initializeNextJsProject as initializeQwenProject, applyChanges as applyQwenChanges } from '@/lib/services/cli/qwen';
 import { initializeNextJsProject as initializeGLMProject, applyChanges as applyGLMChanges } from '@/lib/services/cli/glm';
+import { initializeNextJsProject as initializeGeminiProject, applyChanges as applyGeminiChanges } from '@/lib/services/cli/gemini';
 import { getDefaultModelForCli, normalizeModelId } from '@/lib/constants/cliModels';
 import { streamManager } from '@/lib/services/stream';
+import { getOrCreateContainer } from '@/lib/cloud/docker';
+import { sessionManager } from '@/lib/cloud/sessionManager';
 import type { ChatActRequest } from '@/types/backend';
 import { generateProjectId } from '@/lib/utils';
 import { previewManager } from '@/lib/services/preview';
@@ -37,6 +40,23 @@ function coerceString(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function hasClaudeRuntimeConfig(): boolean {
+  return Boolean(
+    process.env.ALLOW_CLAUDE_RUNTIME === 'true' ||
+      process.env.ANTHROPIC_API_KEY ||
+      process.env.ANTHROPIC_AUTH_TOKEN ||
+      process.env.CLAUDE_CODE_API_KEY
+  );
+}
+
+function resolveRequestedCli(cli: string): string {
+  const normalized = cli.toLowerCase();
+  if (normalized === 'claude' && !hasClaudeRuntimeConfig()) {
+    return 'gemini';
+  }
+  return normalized;
 }
 
 const PROJECTS_DIR = process.env.PROJECTS_DIR || './data/projects';
@@ -279,8 +299,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       coerceString((body as Record<string, unknown>).cliPreference) ??
       coerceString(legacyBody['cli_preference']) ??
       project.preferredCli ??
-      'claude';
-    const cliPreference = cliPreferenceRaw.toLowerCase();
+      'gemini';
+    const cliPreference = resolveRequestedCli(cliPreferenceRaw);
 
     const selectedModelRaw =
       coerceString(body.selectedModel) ??
@@ -370,7 +390,47 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     const projectPath = project.repoPath || path.join(process.cwd(), 'projects', project_id);
 
-    const existingSelected = normalizeModelId(project.preferredCli ?? 'claude', project.selectedModel ?? undefined);
+    if (process.env.CLOUD_WORKSPACES_ENABLED !== 'false') {
+      try {
+        streamManager.publish(project_id, {
+          type: 'status',
+          data: {
+            status: 'workspace_starting',
+            message: 'Starting isolated cloud workspace...',
+            requestId,
+          },
+        });
+
+        const workspaceContainer = await getOrCreateContainer(project_id, projectPath);
+        sessionManager.createSession(project_id, workspaceContainer.id, workspaceContainer.workspacePath);
+
+        streamManager.publish(project_id, {
+          type: 'status',
+          data: {
+            status: 'workspace_ready',
+            message: `Workspace container ready: ${workspaceContainer.name}`,
+            requestId,
+          },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to start workspace container';
+        console.error('[API] Failed to start cloud workspace:', error);
+
+        streamManager.publish(project_id, {
+          type: 'error',
+          error: message,
+          data: { requestId },
+        });
+
+        if (process.env.CLOUD_WORKSPACES_REQUIRED !== 'false') {
+          throw new Error(
+            `Cloud workspace is required but Docker could not start the project container. ${message}`
+          );
+        }
+      }
+    }
+
+    const existingSelected = normalizeModelId(project.preferredCli ?? 'gemini', project.selectedModel ?? undefined);
 
     if (
       project.preferredCli !== cliPreference ||
@@ -401,6 +461,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       const executor =
         cliPreference === 'codex'
           ? initializeCodexProject
+          : cliPreference === 'gemini'
+          ? initializeGeminiProject
           : cliPreference === 'cursor'
           ? initializeCursorProject
           : cliPreference === 'qwen'
@@ -422,6 +484,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       const executor =
         cliPreference === 'codex'
           ? applyCodexChanges
+          : cliPreference === 'gemini'
+          ? applyGeminiChanges
           : cliPreference === 'cursor'
           ? applyCursorChanges
           : cliPreference === 'qwen'

@@ -13,7 +13,7 @@ type CLIOption = CreateProjectCLIOption;
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? '';
 
-const DEFAULT_MODEL_ID = getDefaultModelForCli('claude');
+const DEFAULT_MODEL_ID = getDefaultModelForCli('gemini');
 
 const sanitizeModel = (cli: string, model?: string | null) => normalizeModelId(cli, model);
 
@@ -33,6 +33,22 @@ const CLI_OPTIONS: CLIOption[] = [
       supportsImages,
     })),
     features: ['Advanced reasoning', 'Code generation', '1M context window'],
+  },
+  {
+    id: 'gemini',
+    name: 'Gemini',
+    icon: 'G',
+    description: 'Google Gemini API generation without Claude login',
+    color: 'from-blue-500 to-cyan-500',
+    downloadUrl: 'https://ai.google.dev/',
+    installCommand: 'Set GEMINI_API_KEY in .env.local',
+    models: getModelDefinitionsForCli('gemini').map(({ id, name, description, supportsImages }) => ({
+      id,
+      name,
+      description,
+      supportsImages,
+    })),
+    features: ['No Claude login', 'Free API tier', 'Writes generated project files'],
   },
   {
     id: 'codex',
@@ -118,7 +134,7 @@ interface CreateProjectModalProps {
 export default function CreateProjectModal({ open, onClose, onCreated, onOpenGlobalSettings }: CreateProjectModalProps) {
   const [projectName, setProjectName] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [selectedCLI, setSelectedCLI] = useState<string>('claude');
+  const [selectedCLI, setSelectedCLI] = useState<string>('gemini');
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL_ID);
   // Fallback is removed but kept for backward compatibility
   const [fallbackEnabled, setFallbackEnabled] = useState(false);
@@ -172,9 +188,9 @@ export default function CreateProjectModal({ open, onClose, onCreated, onOpenGlo
         const effectiveCLIs = enabled.length > 0 ? enabled : CLI_OPTIONS.filter((cli) => cli.enabled !== false);
         setEnabledCLIs(effectiveCLIs);
 
-        const defaultCLI = settings.default_cli || 'claude';
+        const defaultCLI = settings.default_cli || 'gemini';
         const preferredCLI =
-          effectiveCLIs.find((cli) => cli.id === defaultCLI)?.id ?? effectiveCLIs[0]?.id ?? 'claude';
+          effectiveCLIs.find((cli) => cli.id === defaultCLI)?.id ?? effectiveCLIs[0]?.id ?? 'gemini';
         setSelectedCLI(preferredCLI);
         setFallbackEnabled(settings.fallback_enabled ?? true);
 
@@ -193,7 +209,7 @@ export default function CreateProjectModal({ open, onClose, onCreated, onOpenGlo
         const effectiveCLIs = available.length > 0 ? available : CLI_OPTIONS.filter((cli) => cli.enabled !== false);
         setEnabledCLIs(effectiveCLIs);
 
-        const fallbackCLI = effectiveCLIs[0]?.id ?? 'claude';
+        const fallbackCLI = effectiveCLIs[0]?.id ?? 'gemini';
         setSelectedCLI(fallbackCLI);
         const fallbackModel = effectiveCLIs[0]?.models[0]?.id ?? DEFAULT_MODEL_ID;
         setSelectedModel(sanitizeModel(fallbackCLI, fallbackModel));
@@ -204,7 +220,7 @@ export default function CreateProjectModal({ open, onClose, onCreated, onOpenGlo
       setCLIStatus(createCliStatusFallback());
       const available = CLI_OPTIONS.filter((cli) => cli.enabled !== false);
       setEnabledCLIs(available);
-      const fallbackCLI = available[0]?.id ?? 'claude';
+      const fallbackCLI = available[0]?.id ?? 'gemini';
       setSelectedCLI(fallbackCLI);
       const fallbackModel = available[0]?.models[0]?.id ?? DEFAULT_MODEL_ID;
       setSelectedModel(sanitizeModel(fallbackCLI, fallbackModel));
@@ -334,12 +350,12 @@ export default function CreateProjectModal({ open, onClose, onCreated, onOpenGlo
     
     // Reset to global defaults or fallback
     if (globalSettings) {
-      setSelectedCLI(globalSettings.default_cli || 'claude');
+      setSelectedCLI(globalSettings.default_cli || 'gemini');
       setFallbackEnabled(globalSettings.fallback_enabled ?? true);
-      const cliSettings = globalSettings.cli_settings?.[globalSettings.default_cli || 'claude'];
-      setSelectedModel(sanitizeModel(globalSettings.default_cli || 'claude', cliSettings?.model));
+      const cliSettings = globalSettings.cli_settings?.[globalSettings.default_cli || 'gemini'];
+      setSelectedModel(sanitizeModel(globalSettings.default_cli || 'gemini', cliSettings?.model));
     } else {
-      setSelectedCLI('claude');
+      setSelectedCLI('gemini');
       setSelectedModel(DEFAULT_MODEL_ID);
       setFallbackEnabled(true);
     }
@@ -390,7 +406,7 @@ export default function CreateProjectModal({ open, onClose, onCreated, onOpenGlo
     let finalModel = selectedModel;
     
     if (useDefaultSettings && globalSettings) {
-      finalCLI = globalSettings.default_cli || 'claude';
+      finalCLI = globalSettings.default_cli || 'gemini';
       const cliSettings = globalSettings.cli_settings?.[finalCLI];
       finalModel = sanitizeModel(finalCLI, cliSettings?.model || selectedModel || DEFAULT_MODEL_ID);
     }
@@ -741,7 +757,7 @@ export default function CreateProjectModal({ open, onClose, onCreated, onOpenGlo
                       className="text-gray-900 hover:underline"
                     >Global Settings</button>.</>
                   ) : (
-                    <>Quick start with Claude AI. Customize AI preferences in <button 
+                    <>Quick start with Gemini AI. Customize AI preferences in <button 
                       onClick={() => {
                         onClose();
                         onOpenGlobalSettings?.();

@@ -153,6 +153,30 @@ Your application will be available at http://localhost:3000
 
 **Note**: Ports are automatically detected. If the default port is in use, the next available port will be assigned.
 
+## Cloud-Native Assignment Mode
+
+This fork includes backend-managed cloud workspace support for the internship assignment.
+
+- Per-project Docker workspaces are created from the backend with Dockerode.
+- Claude Agent SDK remains the agentic coding runtime for planning, file edits, tool calls, shell execution, builds, and fixes.
+- Gemini-backed provider settings can be configured with environment variables or Global Settings, so a paid Claude plan is not required when using a compatible Gemini gateway.
+- Generated projects can be downloaded from `GET /api/projects/:project_id/download`.
+
+Required local environment:
+
+```bash
+CLOUD_WORKSPACES_ENABLED="true"
+CLOUD_WORKSPACES_REQUIRED="true"
+CLOUD_WORKSPACE_IMAGE="node:20-bookworm"
+GEMINI_AGENT_PROVIDER="gemini-compatible"
+GEMINI_AGENT_BASE_URL="https://your-gemini-gateway.example.com/anthropic"
+GEMINI_API_KEY="your-gemini-api-key"
+```
+
+Use a Gemini-backed agent gateway for the runtime. If you only use the native Gemini REST API directly, it will not preserve the full tool/file/shell workflow by itself.
+
+See [CLOUD_NATIVE_STATUS.md](CLOUD_NATIVE_STATUS.md) for the requirement-by-requirement status and remaining deployment/demo checklist.
+
 ## Troubleshooting
 - **Database migration conflicts**: If you upgraded from a previous Claudable version and run into database errors, reset the Prisma database so it matches the latest schema:
   ```bash

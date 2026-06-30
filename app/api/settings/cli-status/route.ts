@@ -143,6 +143,14 @@ export async function GET() {
       error: claudeStatus.error,
     };
 
+    status.gemini = {
+      installed: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY),
+      version: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY ? 'api-key configured' : undefined,
+      checking: false,
+      error: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY ? undefined : 'Set GEMINI_API_KEY in .env.local or Global Settings',
+      models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'],
+    };
+
     const codexStatus = await checkCodexCLI();
     status.codex = {
       installed: codexStatus.installed,

@@ -24,7 +24,7 @@ export async function getAllProjects(): Promise<Project[]> {
   });
   return projects.map(project => ({
     ...project,
-    selectedModel: normalizeModelId(project.preferredCli ?? 'claude', project.selectedModel ?? undefined),
+    selectedModel: normalizeModelId(project.preferredCli ?? 'gemini', project.selectedModel ?? undefined),
   })) as Project[];
 }
 
@@ -38,7 +38,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
   if (!project) return null;
   return {
     ...project,
-    selectedModel: normalizeModelId(project.preferredCli ?? 'claude', project.selectedModel ?? undefined),
+    selectedModel: normalizeModelId(project.preferredCli ?? 'gemini', project.selectedModel ?? undefined),
   } as Project;
 }
 
@@ -58,8 +58,8 @@ export async function createProject(input: CreateProjectInput): Promise<Project>
       description: input.description,
       initialPrompt: input.initialPrompt,
       repoPath: projectPath,
-      preferredCli: input.preferredCli || 'claude',
-      selectedModel: normalizeModelId(input.preferredCli || 'claude', input.selectedModel ?? getDefaultModelForCli(input.preferredCli || 'claude')),
+      preferredCli: input.preferredCli || 'gemini',
+      selectedModel: normalizeModelId(input.preferredCli || 'gemini', input.selectedModel ?? getDefaultModelForCli(input.preferredCli || 'gemini')),
       status: 'idle',
       templateType: 'nextjs',
       lastActiveAt: new Date(),
@@ -71,7 +71,7 @@ export async function createProject(input: CreateProjectInput): Promise<Project>
   console.log(`[ProjectService] Created project: ${project.id}`);
   return {
     ...project,
-    selectedModel: normalizeModelId(project.preferredCli ?? 'claude', project.selectedModel ?? undefined),
+    selectedModel: normalizeModelId(project.preferredCli ?? 'gemini', project.selectedModel ?? undefined),
   } as Project;
 }
 
@@ -86,7 +86,7 @@ export async function updateProject(
     where: { id },
     select: { preferredCli: true },
   });
-  const targetCli = input.preferredCli ?? existing?.preferredCli ?? 'claude';
+  const targetCli = input.preferredCli ?? existing?.preferredCli ?? 'gemini';
   const normalizedModel = input.selectedModel
     ? normalizeModelId(targetCli, input.selectedModel)
     : undefined;
@@ -105,7 +105,7 @@ export async function updateProject(
   console.log(`[ProjectService] Updated project: ${id}`);
   return {
     ...project,
-    selectedModel: normalizeModelId(project.preferredCli ?? 'claude', project.selectedModel ?? undefined),
+    selectedModel: normalizeModelId(project.preferredCli ?? 'gemini', project.selectedModel ?? undefined),
   } as Project;
 }
 
@@ -181,9 +181,9 @@ export async function getProjectCliPreference(projectId: string): Promise<Projec
   }
 
   return {
-    preferredCli: project.preferredCli ?? 'claude',
+    preferredCli: project.preferredCli ?? 'gemini',
     fallbackEnabled: project.fallbackEnabled ?? false,
-    selectedModel: normalizeModelId(project.preferredCli ?? 'claude', project.selectedModel ?? undefined),
+    selectedModel: normalizeModelId(project.preferredCli ?? 'gemini', project.selectedModel ?? undefined),
   };
 }
 
@@ -195,7 +195,7 @@ export async function updateProjectCliPreference(
     where: { id: projectId },
     select: { preferredCli: true },
   });
-  const targetCli = input.preferredCli ?? existing?.preferredCli ?? 'claude';
+  const targetCli = input.preferredCli ?? existing?.preferredCli ?? 'gemini';
 
   const result = await prisma.project.update({
     where: { id: projectId },
@@ -219,8 +219,8 @@ export async function updateProjectCliPreference(
   });
 
   return {
-    preferredCli: result.preferredCli ?? 'claude',
+    preferredCli: result.preferredCli ?? 'gemini',
     fallbackEnabled: result.fallbackEnabled ?? false,
-    selectedModel: normalizeModelId(result.preferredCli ?? 'claude', result.selectedModel ?? undefined),
+    selectedModel: normalizeModelId(result.preferredCli ?? 'gemini', result.selectedModel ?? undefined),
   };
 }

@@ -20,8 +20,9 @@ type GlobalSettingsCtx = {
 };
 
 const defaultSettings: GlobalAISettings = {
-  default_cli: 'claude',
+  default_cli: 'gemini',
   cli_settings: {
+    gemini: { model: getDefaultModelForCli('gemini') },
     claude: { model: getDefaultModelForCli('claude') },
     codex: { model: getDefaultModelForCli('codex') },
     qwen: { model: getDefaultModelForCli('qwen') },

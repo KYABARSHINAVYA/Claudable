@@ -31,7 +31,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const preferredCli = String(body.preferredCli || body.preferred_cli || 'claude').toLowerCase();
+    const preferredCli = String(body.preferredCli || body.preferred_cli || 'gemini').toLowerCase();
     const requestedModel = body.selectedModel || body.selected_model;
 
     const input: CreateProjectInput = {
